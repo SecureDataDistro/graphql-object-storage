@@ -1,0 +1,17 @@
+{
+  "name": "graphql-object-storage",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:SecureDataDistro/graphql-object-storage.git",
+  "author": "j.taylor <j.taylor@orbisops.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@apollo/server": "^4.7.5",
+    "@google-cloud/storage": "^6.11.0",
+    "typescript": "^5.1.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20.3.2",
+    "esbuild": "^0.18.10"
+  }
+}
