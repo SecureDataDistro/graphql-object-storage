@@ -1,6 +1,6 @@
 {
   "name": "graphql-object-storage",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "main": "index.js",
   "repository": "git@github.com:SecureDataDistro/graphql-object-storage.git",
   "author": "j.taylor <j.taylor@orbisops.com>",
@@ -10,12 +10,16 @@
     "gcp:example:build": "yarn esbuild ./src/examples/gcp_bucket/index.ts --outfile=./src/examples/gcp_bucket/dist.js --bundle --platform=node --target=node18",
     "gcp:example:docker:ecrlogin": "aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/z0z7j0k1",
     "gcp:example:docker:build": "docker build -t gcp-bucket -f ./dockerfiles/gcp_bucket_example.df .",
-    "gcp:example:docker:tag": "docker tag jwt-service:latest public.ecr.aws/z0z7j0k1/jwt-service:latest",
-    "gcp:example:docker:push": "docker push public.ecr.aws/z0z7j0k1/jwt-service:latest"
+    "gcp:example:docker:tag": "docker tag gcp-bucket:latest public.ecr.aws/z0z7j0k1/gcp-bucket:latest",
+    "gcp:example:docker:push": "docker push public.ecr.aws/z0z7j0k1/gcp-bucket:latest",
+    "gcp:example:docker:publish": "yarn gcp:example:docker:ecrlogin && yarn gcp:example:docker:build && yarn gcp:example:docker:tag && yarn gcp:example:docker:push"
   },
   "dependencies": {
     "@apollo/server": "^4.7.5",
     "@google-cloud/storage": "^6.11.0",
+    "@hub/iam": "https://github.com/SecureDataDistro/iam.git",
+    "@hub/jwt": "https://github.com/SecureDataDistro/jwt.git",
+    "commander": "^11.0.0",
     "graphql": "^16.7.1",
     "graphql-tag": "^2.12.6",
     "typescript": "^5.1.6"
@@ -24,5 +28,6 @@
     "@types/node": "^20.3.2",
     "esbuild": "^0.18.10",
     "run-func": "^3.0.0"
-  }
+  },
+  "packageManager": "yarn@3.6.1"
 }

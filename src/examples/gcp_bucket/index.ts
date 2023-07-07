@@ -1,16 +1,8 @@
 import {Config, StartServer, Resolvers} from "../../../index"
 import {gql} from "graphql-tag";
 import { CloudObjectStorageProvider } from "../../object-storage/clouds";
-
-const config: Config = {
-    provider: "gcp",
-    serverPort: 4000,
-    workspaceId: "rare-nectar-390503",
-    cacheTTL: 5 * 60, // 5 min
-    bucketName: "demo-data-tapioca",
-    folder: "earthquake/",
-    glob: "earthquake/*.json"
-}
+import { Command } from 'commander';
+import { nodeModuleNameResolver } from "typescript";
 
 const schema = gql`
     type Query {
@@ -55,6 +47,38 @@ class eqResolver implements Resolvers {
 
 
 export async function Start() {
-    const resolvers = new eqResolver();
-    await StartServer(config, schema, resolvers);
+    const program = new Command();
+
+    program
+    .description("Object Storage GraphQL Service")
+    .requiredOption("--account <account id>", "account id for the cloud provider being used")
+    .option("-P, --provider <provider>", "select an object store provider (gcp)", "gcp")
+    .option("-p, --port", "port to serve graphql api on", "4000")
+    .option("--ttl", "interval in seconds to refresh in-memory data from storage", "300")
+    .requiredOption("-b, --bucket <bucket name>", "name of the bucket to read from")
+    .requiredOption("-f, --folder <bucket folder path>", "bucket folder path to read from", undefined)
+    .requiredOption("-g, --glob <file glob pattern>", "glob pattern to use to restrict read files (if supported by provider)", undefined)
+    .requiredOption("--urn <long or short hand resource URN>", "resource URN (as defined in IAM docs) for repository")
+    .requiredOption("--endpoint <endpoint url>", "http(s) endpoint to get public jet key from such as http://localhost:3000/pub")
+    .action(async (opts) => {
+
+        const config: Config = {
+            provider: opts.provider,
+            serverPort: Number(opts.port),
+            workspaceId: opts.account,
+            cacheTTL: Number(opts.ttl),
+            bucketName: opts.bucket,
+            folder: opts.folder,
+            glob: opts.glob,
+            resourceURN: opts.urn,
+            publicKeyEndpoint: opts.endpoint
+        }
+
+        const resolvers = new eqResolver();
+        await StartServer(config, schema, resolvers);
+    });
+
+    
+
+    program.parse(process.argv.slice(2));
 }
