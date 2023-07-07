@@ -8,15 +8,21 @@ export interface Config extends storageConfig, GraphqlServerConfig  {
     serverPort: number
 }
 
-const providers: {[key:string]: (config: Config) => GCPObjectStorage } = {
+const providers: {[key:string]: (config: Config) => CloudObjectStorageProvider } = {
     gcp: (config: Config) => {
         return new GCPObjectStorage 
     }
+};
+
+export interface Resolvers {
+    withProvider(provider: CloudObjectStorageProvider): any
 }
 
-export async function StartServer(config: Config, typeDefs: any, resolvers: any) {
-    const provider = providers[config.provider](config);
 
-    return StartApolloStandaloneServer(config, typeDefs, resolvers);
+export async function StartServer(config: Config, typeDefs: any, resolverProvider: Resolvers) {
+    const provider = providers[config.provider](config);
+    await provider.init(config);
+
+    return StartApolloStandaloneServer(config, typeDefs, resolverProvider.withProvider(provider));
 }
 

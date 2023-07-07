@@ -1,39 +1,56 @@
-import {Storage} from '@google-cloud/storage';
+import {Storage, GetFilesResponse} from '@google-cloud/storage';
 import {Config, CloudObjectStorageProvider} from "../index"
 
 
-async function authenticateImplicitWithAdc(config: Config) {
-    // This snippet demonstrates how to list buckets.
-    // NOTE: Replace the client created below with the client required for your application.
-    // Note that the credentials are not specified when constructing the client.
-    // The client library finds your credentials using ADC.
-    const storage = new Storage({
-      projectId: config.workspaceId,
-    });
-    const [buckets] = await storage.getBuckets({
-        prefix: config.bucketName
-    });
-    console.log('Buckets:');
-  
-    for (const bucket of buckets) {
-      console.log(`- ${bucket.name}`);
-    }
-  
-    console.log('Listed all storage buckets.');
-  }
-  
-  //authenticateImplicitWithAdc();
-
 export class GCPObjectStorage implements CloudObjectStorageProvider {
-    data = ["test"];
+    data: any[] = [];
+    storage: Storage | undefined;
+    config: Config | undefined;
     constructor(){}
 
     async init(config: Config): Promise<any> {
-        await authenticateImplicitWithAdc(config);
-        return true;
+      this.storage = new Storage({
+        projectId: config.workspaceId,
+      });
+
+      this.config = config;
+
+      await this.refresh();
+      
+      console.log("init done");
+
+      return true;
     }
 
-    refresh(): Promise<any> {
-        return Promise.resolve(this.data);
+    async refresh(): Promise<any[]> {
+      if (this.storage == undefined) {
+        throw new Error("Init routine was not ran");
+      }
+
+      if (this.config == undefined) {
+        throw new Error("Config cannot be undefined");
+      }
+
+      const bucket = await this.storage.bucket(this.config.bucketName);
+
+      const [files] : GetFilesResponse  = await bucket.getFiles({
+        prefix: this.config.folder,
+        matchGlob: this.config.glob
+      });
+
+      let newData: any[] = [];
+      for (const file of files) {
+        console.log(file.name);
+        const content = await file.download();
+        //console.log(content);
+        //console.log(JSON.parse(String(content)));
+        newData.push(JSON.parse(String(content)));
+      }
+
+      this.data = newData;
+      
+      console.log("refresh done");
+
+      return Promise.resolve(this.data);
     }
 }

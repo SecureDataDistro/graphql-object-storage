@@ -1,0 +1,27 @@
+FROM docker.io/library/node:18-bookworm AS builder
+
+COPY --chown=node:node ./ /app
+
+WORKDIR /app
+
+RUN yarn install
+
+RUN yarn gcp:example:build
+
+RUN ls -al ./src/examples/gcp_bucket/dist.js
+
+
+####################
+
+FROM docker.io/library/node:18-alpine
+
+RUN npm i -g run-func
+
+WORKDIR /app
+
+COPY --chown=node:node  --from=builder /app/src/examples/gcp_bucket/dist.js ./index.js
+
+
+ENTRYPOINT [ "npx", "run-func", "./index.js" ]
+
+CMD [ "Start" ]

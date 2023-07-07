@@ -6,6 +6,7 @@ export interface CloudObjectStorageProvider {
 export interface Config {
     workspaceId: string
     cacheTTL: number // in seconds
-    fileGlob: string
+    folder?: string
+    glob?: string
     bucketName: string
 }
