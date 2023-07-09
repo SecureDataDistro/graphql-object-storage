@@ -21,6 +21,7 @@ WORKDIR /app
 
 COPY --chown=node:node  --from=builder /app/src/examples/gcp_bucket/dist.js ./index.js
 
+EXPOSE 4000
 
 ENTRYPOINT [ "npx", "run-func", "./index.js" ]
 

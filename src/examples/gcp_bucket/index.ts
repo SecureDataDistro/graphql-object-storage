@@ -53,7 +53,6 @@ export async function Start() {
     .description("Object Storage GraphQL Service")
     .requiredOption("--account <account id>", "account id for the cloud provider being used")
     .option("-P, --provider <provider>", "select an object store provider (gcp)", "gcp")
-    .option("-p, --port", "port to serve graphql api on", "4000")
     .option("--ttl", "interval in seconds to refresh in-memory data from storage", "300")
     .requiredOption("-b, --bucket <bucket name>", "name of the bucket to read from")
     .requiredOption("-f, --folder <bucket folder path>", "bucket folder path to read from", undefined)
@@ -64,7 +63,7 @@ export async function Start() {
 
         const config: Config = {
             provider: opts.provider,
-            serverPort: Number(opts.port),
+            serverPort: 4000,
             workspaceId: opts.account,
             cacheTTL: Number(opts.ttl),
             bucketName: opts.bucket,
