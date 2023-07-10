@@ -1,5 +1,4 @@
 import { ApolloServer, BaseContext } from "@apollo/server";
-import { startStandaloneServer } from '@apollo/server/standalone';
 import { GraphQLError } from 'graphql';
 import {JWT} from "@hub/jwt"
 import { Authorizer } from "@hub/iam";
@@ -10,7 +9,6 @@ import express from 'express';
 import http from 'http';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import { config } from "process";
 
 export interface GraphqlServerConfig {
     serverPort: number
@@ -19,7 +17,7 @@ export interface GraphqlServerConfig {
 }
 
 export interface AuthContext extends BaseContext {
-    jwt: JWT
+    jwt: JWT | undefined
 }
 
 export async function StartApolloStandaloneServer(config: GraphqlServerConfig, typeDefs: any, resolvers: any) {
@@ -48,19 +46,41 @@ export async function StartApolloStandaloneServer(config: GraphqlServerConfig, t
       expressMiddleware<AuthContext>(server, {
         context: async ({ req, res }) => {
             // Get the user token from the headers.
-            const token: string = req.headers["x-hasura-token"] as string || '';
-            
-            if (token == '') {
-                throw new GraphQLError('JWT is not present', {
-                    extensions: {
-                      code: 'UNAUTHENTICATED',
-                      http: { status: 401 },
-                    },
-                  });
-            }
+            // look for x-sdd-user-token
+            // or x-ssd-router-token
+            const routerToken: string | undefined = req.headers['x-sdd-router-token'] as string || undefined;
+            const userToken: string | undefined= req.headers["x-sdd-user-token"] as string || undefined;
 
-            // Try to retrieve a user with the token
-            const jwt = await auth.isVerified(token);
+            // default to user token if available
+            if (!userToken) {
+              // rely only on router token
+              if (!routerToken) {
+                // if router token doesnt exist then we dont have a token
+                throw new GraphQLError('JWT is not present', {
+                  extensions: {
+                    code: 'UNAUTHENTICATED',
+                    http: { status: 401 },
+                  },
+                });
+              }
+
+              // if the router token is not verified throw an error
+              if (!await auth.isVerified(routerToken)) {
+                throw new GraphQLError('JWT cannot be verified', {
+                  extensions: {
+                    code: 'UNAUTHENTICATED',
+                    http: { status: 401 },
+                  },
+                });
+              }
+
+              // do not return the jwt as the router only has access to the schema endpoint
+              return {jwt: undefined};
+            }
+            
+
+            // user token verification
+            const jwt = await auth.isVerified(userToken);
 
             if (!jwt) {
                 throw new GraphQLError('JWT cannot be verified', {
@@ -70,18 +90,6 @@ export async function StartApolloStandaloneServer(config: GraphqlServerConfig, t
                     },
                   });
             }
-
-            const allowed = await auth.isAuthorized(jwt, [config.resourceURN]);
-
-            if (!allowed) {
-                throw new GraphQLError('Not authorized to access URN', {
-                    extensions: {
-                      code: 'FORBIDDEN',
-                      http: { status: 403 },
-                    },
-                  });
-            }
-
         
             // Add the user to the context
             return { jwt };

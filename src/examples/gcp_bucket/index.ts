@@ -2,7 +2,9 @@ import {Config, StartServer, Resolvers} from "../../../index"
 import {gql} from "graphql-tag";
 import { CloudObjectStorageProvider } from "../../object-storage/clouds";
 import { Command } from 'commander';
-import { nodeModuleNameResolver } from "typescript";
+import { GraphQLError } from 'graphql';
+import { Authorizer } from "@hub/iam";
+import { AuthContext } from "../../../src/object-storage/server"
 
 const schema = gql`
     type Query {
@@ -28,22 +30,6 @@ const schema = gql`
     }
 `
 
-class eqResolver implements Resolvers {
-    constructor(){}
-
-    withProvider(provider: CloudObjectStorageProvider) {
-        return {
-            Query: {
-                Earthquakes: async () => {
-                    console.log("querying for earthquakes");
-                    const refreshedData = await provider.refresh()
-                    //console.log(refreshedData);
-                    return refreshedData;
-                }
-            }
-        }
-    }
-}
 
 
 export async function Start() {
@@ -71,6 +57,36 @@ export async function Start() {
             glob: opts.glob,
             resourceURN: opts.urn,
             publicKeyEndpoint: opts.endpoint
+        }
+
+        const auth = new Authorizer(config.publicKeyEndpoint);
+
+        class eqResolver implements Resolvers {
+            constructor(){}
+        
+            withProvider(provider: CloudObjectStorageProvider) {
+                return {
+                    Query: {
+                        Earthquakes: async (_,__,contextValue: AuthContext) => {
+                            const allowed = await auth.isAuthorized(contextValue.jwt!, [config.resourceURN]);
+        
+                            if (!allowed) {
+                                throw new GraphQLError('Not authorized to access URN', {
+                                    extensions: {
+                                    code: 'FORBIDDEN',
+                                    http: { status: 403 },
+                                    },
+                                });
+                            }
+        
+                            console.log("querying for earthquakes");
+                            const refreshedData = await provider.refresh()
+                            //console.log(refreshedData);
+                            return refreshedData;
+                        }
+                    }
+                }
+            }
         }
 
         const resolvers = new eqResolver();
