@@ -1,10 +1,8 @@
-import {Config, StartServer, Resolvers} from "../../../index"
+import {Config, StartServer, Resolvers, CloudObjectStorageProvider, AuthContext} from "../../../index"
 import {gql} from "graphql-tag";
-import { CloudObjectStorageProvider } from "../../object-storage/clouds";
 import { Command } from 'commander';
 import { GraphQLError } from 'graphql';
 import { Authorizer } from "@hub/iam";
-import { AuthContext } from "../../../src/object-storage/server"
 
 const schema = gql`
     type Query {

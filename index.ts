@@ -2,6 +2,7 @@ import {Config as storageConfig, CloudObjectStorageProvider as cloudObjectStorag
 import {GCPObjectStorage} from "./src/object-storage/clouds/gcp/index"
 import {GraphqlServerConfig, StartApolloStandaloneServer} from "./src/object-storage/server/index"
 
+export { AuthContext } from "./src/object-storage/server";
 export interface CloudObjectStorageProvider extends cloudObjectStorageProvider{}
 
 export interface Config extends storageConfig, GraphqlServerConfig  {
