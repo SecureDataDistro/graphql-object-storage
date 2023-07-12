@@ -1,7 +1,8 @@
-import {Config as storageConfig, CloudObjectStorageProvider} from "./src/object-storage/clouds/index";
+import {Config as storageConfig, CloudObjectStorageProvider as cloudObjectStorageProvider} from "./src/object-storage/clouds/index";
 import {GCPObjectStorage} from "./src/object-storage/clouds/gcp/index"
-
 import {GraphqlServerConfig, StartApolloStandaloneServer} from "./src/object-storage/server/index"
+
+export interface CloudObjectStorageProvider extends cloudObjectStorageProvider{}
 
 export interface Config extends storageConfig, GraphqlServerConfig  {
     provider: string
